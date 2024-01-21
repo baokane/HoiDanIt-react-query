@@ -1,11 +1,40 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Button from 'react-bootstrap/Button';
 import Modal from 'react-bootstrap/Modal';
+import { toast } from 'react-toastify';
+
+interface IDeleteUser {
+    id: number;
+}
 
 const BlogDeleteModal = (props: any) => {
     const { dataBlog, isOpenDeleteModal, setIsOpenDeleteModal } = props;
 
+    const queryClient = useQueryClient()
+
+    const mutation = useMutation({
+        mutationFn: async (payload: IDeleteUser) => {
+            const res = await fetch(`http://localhost:8000/blogs/${payload.id}`, {
+                method: "DELETE",
+                body: JSON.stringify({
+                    id: payload.id
+                }),
+                headers: {
+                    "Content-Type": " application/json"
+                }
+            });
+            return res.json()
+        },
+        onSuccess: (data, variables, context) => {
+            // Boom baby!
+            toast('🦄 Wow so easy!')
+            setIsOpenDeleteModal(false)
+            queryClient.invalidateQueries({ queryKey: ['fetchBlogs'] })
+        },
+    })
 
     const handleSubmit = () => {
+        mutation.mutate({ id: dataBlog?.id })
         console.log({ id: dataBlog?.id });
     }
 

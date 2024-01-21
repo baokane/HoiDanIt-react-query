@@ -3,15 +3,50 @@ import Modal from 'react-bootstrap/Modal';
 import FloatingLabel from 'react-bootstrap/FloatingLabel';
 import Form from 'react-bootstrap/Form';
 import { useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
+import { Spinner } from 'react-bootstrap';
+
+interface ICreateUser {
+    title: string;
+    author: string;
+    content: string;
+}
 
 const BlogCreateModal = (props: any) => {
     const { isOpenCreateModal, setIsOpenCreateModal } = props;
+
+    const queryClient = useQueryClient()
 
     const [title, setTitle] = useState<string>("");
     const [author, setAuthor] = useState<string>("");
     const [content, setContent] = useState<string>("");
 
-
+    const mutation = useMutation({
+        mutationFn: async (payload: ICreateUser) => {
+            const res = await fetch("http://localhost:8000/blogs", {
+                method: "POST",
+                body: JSON.stringify({
+                    title: payload.title,
+                    author: payload.author,
+                    content: payload.content,
+                }),
+                headers: {
+                    "Content-Type": " application/json"
+                }
+            });
+            return res.json()
+        },
+        onSuccess: (data, variables, context) => {
+            // Boom baby!
+            toast('🦄 Wow so easy!')
+            setTitle('')
+            setAuthor('')
+            setContent('')
+            setIsOpenCreateModal(false)
+            queryClient.invalidateQueries({ queryKey: ['fetchBlogs'] })
+        },
+    })
 
     const handleSubmit = () => {
         if (!title) {
@@ -27,6 +62,7 @@ const BlogCreateModal = (props: any) => {
             return;
         }
         //call api => call redux
+        mutation.mutate({ title, author, content })
         console.log({ title, author, content }) //payload
     }
 
@@ -73,10 +109,26 @@ const BlogCreateModal = (props: any) => {
                     </FloatingLabel>
                 </Modal.Body>
                 <Modal.Footer>
-                    <Button
-                        variant='warning'
-                        onClick={() => setIsOpenCreateModal(false)} className='mr-2'>Cancel</Button>
-                    <Button onClick={() => handleSubmit()}>Save</Button>
+                    {!mutation.isPending ?
+                        <>
+                            <Button
+                                variant='warning'
+                                onClick={() => setIsOpenCreateModal(false)} className='mr-2'>Cancel</Button>
+                            <Button onClick={() => handleSubmit()}>Save</Button>
+                        </>
+                        :
+                        <Button variant="primary" disabled>
+                            <Spinner
+                                as="span"
+                                animation="border"
+                                size="sm"
+                                role="status"
+                                aria-hidden="true"
+                            />
+                            <></> Saving...
+                        </Button>
+                    }
+
                 </Modal.Footer>
             </Modal>
         </>

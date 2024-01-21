@@ -9,6 +9,8 @@ import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Popover from 'react-bootstrap/Popover';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { calculatePagesCount } from '../helper';
+import { QUERY_KEY } from '../config/key';
+import { PAGE_SIZE, useFetchUser } from '../config/fetch';
 
 interface IUser {
     id: number;
@@ -25,8 +27,8 @@ function UsersTable() {
     const [isOpenDeleteModal, setIsOpenDeleteModal] = useState<boolean>(false);
 
     const [currentPage, setCurrentPage] = useState<number>(1);
-    const [totalPages, setTotalPage] = useState<number>(1);
-    const PAGE_SIZE = 2
+    // const [totalPages, setTotalPage] = useState<number>(1);
+    // const PAGE_SIZE = 2
 
 
     const handleEditUser = (user: any) => {
@@ -82,16 +84,18 @@ function UsersTable() {
     })
 
     // 
-    const { isPending, error, data } = useQuery({
-        queryKey: ['fetchUser', currentPage],
-        queryFn: (): Promise<IUser[]> =>
-            fetch(`http://localhost:8000/users?_page=${currentPage}&_limit=${PAGE_SIZE}`).then((res) => {
-                const total_items = +(res.headers?.get('X-Total-Count') ?? 0)
-                setTotalPage(calculatePagesCount(PAGE_SIZE, total_items))
-                return res.json()
-            }),
-        placeholderData: keepPreviousData,
-    })
+    const { isPending, error, data, totalPages } = useFetchUser(currentPage)
+    //     useQuery({
+    //     // queryKey: ['fetchUser', currentPage],
+    //     queryKey: QUERY_KEY.getUserPaginate(currentPage),
+    //     queryFn: (): Promise<IUser[]> =>
+    //         fetch(`http://localhost:8000/users?_page=${currentPage}&_limit=${PAGE_SIZE}`).then((res) => {
+    //             const total_items = +(res.headers?.get('X-Total-Count') ?? 0)
+    //             setTotalPage(calculatePagesCount(PAGE_SIZE, total_items))
+    //             return res.json()
+    //         }),
+    //     placeholderData: keepPreviousData,
+    // })
 
     const users = data
 

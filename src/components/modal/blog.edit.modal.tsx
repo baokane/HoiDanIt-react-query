@@ -3,9 +3,21 @@ import Modal from 'react-bootstrap/Modal';
 import FloatingLabel from 'react-bootstrap/FloatingLabel';
 import Form from 'react-bootstrap/Form';
 import { useState, useEffect } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'react-toastify';
+
+interface IDeleteUser {
+    id: number;
+    title: string;
+    author: string;
+    content: string;
+}
 
 const BlogEditModal = (props: any) => {
     const { isOpenUpdateModal, setIsOpenUpdateModal, dataBlog } = props;
+
+    const queryClient = useQueryClient()
+
     const [id, setId] = useState();
 
     const [title, setTitle] = useState<string>("");
@@ -21,6 +33,33 @@ const BlogEditModal = (props: any) => {
         }
     }, [dataBlog])
 
+    const mutation = useMutation({
+        mutationFn: async (payload: IDeleteUser) => {
+            const res = await fetch(`http://localhost:8000/blogs/${payload.id}`, {
+                method: "PUT",
+                body: JSON.stringify({
+                    id: payload.id,
+                    title: payload.title,
+                    author: payload.author,
+                    content: payload.content
+                }),
+                headers: {
+                    "Content-Type": " application/json"
+                }
+            });
+            return res.json()
+        },
+        onSuccess: (data, variables, context) => {
+            // Boom baby!
+            toast('🦄 Wow so easy!')
+            setAuthor('')
+            setContent('')
+            setTitle('')
+            setIsOpenUpdateModal(false)
+            queryClient.invalidateQueries({ queryKey: ['fetchBlogs'] })
+        },
+    })
+
     const handleSubmit = () => {
         if (!title) {
             alert("title empty");
@@ -34,6 +73,8 @@ const BlogEditModal = (props: any) => {
             alert("content empty");
             return;
         }
+        if (id)
+            mutation.mutate({ title, author, content, id })
         console.log({ title, author, content, id })
     }
 
